@@ -32,8 +32,8 @@ fn main() -> Result<(), reqwest::Error> {
 
     println!("id: {}", pokemon.id);
     println!("name: {}", pokemon.name);
-    println!("weight: {}kg", pokemon.weight as f64 / 10.0);
-    println!("height: {}m", pokemon.height as f64 / 10.0);
+    println!("weight: {:.1}kg", pokemon.weight as f64 / 10.0);
+    println!("height: {:.1}m", pokemon.height as f64 / 10.0);
     println!("sprite url: {}", pokemon.sprites.front_default);
 
     Ok(())
