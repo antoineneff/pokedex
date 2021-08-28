@@ -1,6 +1,6 @@
 use clap::{App, Arg};
 use serde::Deserialize;
-use image::{GenericImageView};
+use image::GenericImageView;
 
 #[derive(Deserialize, Debug)]
 struct Pokemon {
@@ -33,8 +33,8 @@ fn main() -> Result<(), reqwest::Error> {
 
     println!("id: {}", pokemon.id);
     println!("name: {}", pokemon.name);
-    println!("weight: {:.1}kg", pokemon.weight as f64 / 10.0);
-    println!("height: {:.1}m", pokemon.height as f64 / 10.0);
+    println!("weight: {:.1}kg", pokemon.weight as f32 / 10.0);
+    println!("height: {:.1}m", pokemon.height as f32 / 10.0);
 
     let img_bytes = reqwest::blocking::get(pokemon.sprites.front_default)?.bytes()?;
     let img = image::load_from_memory(&img_bytes).unwrap();
