@@ -2,6 +2,10 @@ use clap::{App, Arg};
 use serde::Deserialize;
 use image::GenericImageView;
 
+const UPPER_HALF_BLOCK: &str = "\u{2580}";
+const LOWER_HALF_BLOCK: &str = "\u{2584}";
+const POSTFIX: &str = "\x1B[0m";
+
 #[derive(Deserialize, Debug)]
 struct Pokemon {
     id: u16,
@@ -40,15 +44,31 @@ fn main() -> Result<(), reqwest::Error> {
     let img = image::load_from_memory(&img_bytes).unwrap();
     let (width, height) = img.dimensions();
 
-    for y in 0..height {
+    for y in (0..height).step_by(2)  {
         for x in 0..width {
+            // Get top half block color
             let [r, g, b, alpha] = img.get_pixel(x, y).0;
-            if alpha == 0 {
+            // Get bottom half block color
+            let [r2, g2, b2, alpha2] = img.get_pixel(x, y + 1).0;
+
+            // Both transparent
+            if alpha == 0 && alpha2 == 0 {
                 print!(" ")
-            } else {
-                let prefix = format!("\x1B[48;2;{};{};{}m", r, g, b);
-                let postfix = "\x1B[0m";
-                print!("{} {}", prefix, postfix);
+            }
+            // Top half transparent, set colored lower half block
+            else if alpha == 0 {
+                let prefix = format!("\x1B[38;2;{};{};{}m", r2, g2, b2);
+                print!("{}{}{}", prefix, LOWER_HALF_BLOCK, POSTFIX);
+            }
+            // Bottom half transparent, set colored top half block
+            else if alpha2 == 0 {
+                let prefix = format!("\x1B[38;2;{};{};{}m", r, g, b);
+                print!("{}{}{}", prefix, UPPER_HALF_BLOCK, POSTFIX);
+            }
+            // Both blocks are colored, set colored top half block with foreground color
+            else {
+                let prefix = format!("\x1B[38;2;{};{};{}m\x1B[48;2;{};{};{}m", r, g, b, r2, g2, b2);
+                print!("{}{}{}", prefix, UPPER_HALF_BLOCK, POSTFIX);
             }
         }
         println!()
