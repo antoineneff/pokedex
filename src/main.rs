@@ -15,7 +15,19 @@ struct Pokemon {
     name: String,
     weight: u16,
     height: u16,
+    types: Vec<TypeObject>,
     sprites: Sprites,
+}
+
+#[derive(Deserialize, Debug)]
+struct TypeObject {
+    slot: u8,
+    r#type: Type,
+}
+
+#[derive(Deserialize, Debug)]
+struct Type {
+    name: String
 }
 
 #[derive(Deserialize, Debug)]
@@ -37,16 +49,20 @@ fn main() -> Result<(), reqwest::Error> {
     let search = matches.value_of("search").unwrap().to_lowercase();
     let uri = format!("https://pokeapi.co/api/v2/pokemon/{}", search);
     let pokemon: Pokemon = reqwest::blocking::get(uri)?.json()?;
+    let types_str = get_pokemon_types_str(pokemon.types);
 
     let mut table = Table::new();
     table.max_column_width = 96;
     table.style = TableStyle::extended();
 
     table.add_row(Row::new(vec![
-        TableCell::new_with_alignment(pokemon.name.to_uppercase(), 3, Alignment::Center),
+        TableCell::new_with_alignment(pokemon.name.to_uppercase(), 2, Alignment::Center),
     ]));
     table.add_row(Row::new(vec![
         TableCell::new_with_alignment(format!("# {}", pokemon.id), 1, Alignment::Center),
+        TableCell::new_with_alignment(format!("{}", types_str), 1, Alignment::Center)
+    ]));
+    table.add_row(Row::new(vec![
         TableCell::new_with_alignment(format!("{:.1}kg", pokemon.weight as f32 / 10.0), 1, Alignment::Center),
         TableCell::new_with_alignment(format!("{:.2}m", pokemon.height as f32 / 10.0), 1, Alignment::Center)
     ]));
@@ -88,10 +104,18 @@ fn main() -> Result<(), reqwest::Error> {
     }
 
     table.add_row(Row::new(vec![
-        TableCell::new_with_alignment(pokemon_str, 3, Alignment::Center)
+        TableCell::new_with_alignment(pokemon_str, 2, Alignment::Center)
     ]));
 
     println!("{}", table.render());
 
     Ok(())
+}
+
+fn get_pokemon_types_str(types: Vec<TypeObject>) -> String {
+    let mut simplified_types = Vec::new();
+    for type_object in types {
+        simplified_types.push(type_object.r#type.name)
+    }
+    simplified_types.join(", ")
 }
