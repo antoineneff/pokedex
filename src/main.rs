@@ -15,24 +15,25 @@ struct Pokemon {
     name: String,
     weight: u16,
     height: u16,
-    types: Vec<TypeObject>,
-    sprites: Sprites,
+    types: Vec<PokemonType>,
+    sprites: PokemonSprites,
 }
 
 #[derive(Deserialize, Debug)]
-struct TypeObject {
+struct PokemonType {
     slot: u8,
-    r#type: Type,
+    r#type: NamedAPIResource,
 }
 
 #[derive(Deserialize, Debug)]
-struct Type {
-    name: String
+struct PokemonSprites {
+    front_default: String,
 }
 
 #[derive(Deserialize, Debug)]
-struct Sprites {
-    front_default: String
+struct NamedAPIResource {
+    name: String,
+    url: String,
 }
 
 fn main() -> Result<(), reqwest::Error> {
@@ -112,7 +113,7 @@ fn main() -> Result<(), reqwest::Error> {
     Ok(())
 }
 
-fn get_pokemon_types_str(types: Vec<TypeObject>) -> String {
+fn get_pokemon_types_str(types: Vec<PokemonType>) -> String {
     let mut simplified_types = Vec::new();
     for type_object in types {
         simplified_types.push(type_object.r#type.name)
