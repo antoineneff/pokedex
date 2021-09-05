@@ -5,8 +5,8 @@ use term_table::{Table, TableStyle};
 use term_table::row::Row;
 use term_table::table_cell::{TableCell, Alignment};
 
-const UPPER_HALF_BLOCK: &str = "\u{2580}";
-const LOWER_HALF_BLOCK: &str = "\u{2584}";
+const TOP_HALF_BLOCK: &str = "\u{2580}";
+const BOTTOM_HALF_BLOCK: &str = "\u{2584}";
 const POSTFIX: &str = "\x1B[0m";
 
 #[derive(Deserialize, Debug)]
@@ -16,18 +16,12 @@ struct Pokemon {
     weight: u16,
     height: u16,
     types: Vec<PokemonType>,
-    sprites: PokemonSprites,
 }
 
 #[derive(Deserialize, Debug)]
 struct PokemonType {
     slot: u8,
     r#type: NamedAPIResource,
-}
-
-#[derive(Deserialize, Debug)]
-struct PokemonSprites {
-    front_default: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -68,7 +62,8 @@ fn main() -> Result<(), reqwest::Error> {
         TableCell::new_with_alignment(format!("{:.2}m", pokemon.height as f32 / 10.0), 1, Alignment::Center)
     ]));
 
-    let img_bytes = reqwest::blocking::get(pokemon.sprites.front_default)?.bytes()?;
+    let pokemon_image_url = format!("https://img.pokemondb.net/sprites/sword-shield/icon/{}.png", pokemon.name);
+    let img_bytes = reqwest::blocking::get(pokemon_image_url)?.bytes()?;
     let img = image::load_from_memory(&img_bytes).unwrap();
     let (width, height) = img.dimensions();
 
@@ -81,24 +76,24 @@ fn main() -> Result<(), reqwest::Error> {
             // Get bottom half block color
             let [r2, g2, b2, alpha2] = img.get_pixel(x, y + 1).0;
 
-            // Both transparent
+            // Both transparent, use space character
             if alpha == 0 && alpha2 == 0 {
                 pokemon_str.push_str(" ");
             }
-            // Top half transparent, set colored lower half block
+            // Top half transparent, set colored bottom half block
             else if alpha == 0 {
                 let prefix = format!("\x1B[38;2;{};{};{}m", r2, g2, b2);
-                pokemon_str.push_str(&format!("{}{}{}", prefix, LOWER_HALF_BLOCK, POSTFIX));
+                pokemon_str.push_str(&format!("{}{}{}", prefix, BOTTOM_HALF_BLOCK, POSTFIX));
             }
             // Bottom half transparent, set colored top half block
             else if alpha2 == 0 {
                 let prefix = format!("\x1B[38;2;{};{};{}m", r, g, b);
-                pokemon_str.push_str(&format!("{}{}{}", prefix, UPPER_HALF_BLOCK, POSTFIX));
+                pokemon_str.push_str(&format!("{}{}{}", prefix, TOP_HALF_BLOCK, POSTFIX));
             }
-            // Both blocks are colored, set colored top half block with foreground color
+            // Both blocks are colored, set colored top half block with background color for bottom half block
             else {
                 let prefix = format!("\x1B[38;2;{};{};{}m\x1B[48;2;{};{};{}m", r, g, b, r2, g2, b2);
-                pokemon_str.push_str(&format!("{}{}{}", prefix, UPPER_HALF_BLOCK, POSTFIX));
+                pokemon_str.push_str(&format!("{}{}{}", prefix, TOP_HALF_BLOCK, POSTFIX));
             }
         }
         pokemon_str.push_str("\n");
@@ -108,6 +103,7 @@ fn main() -> Result<(), reqwest::Error> {
         TableCell::new_with_alignment(pokemon_str, 2, Alignment::Center)
     ]));
 
+    // Print table
     println!("{}", table.render());
 
     Ok(())
